@@ -121,6 +121,20 @@ h1,h2{font-family:var(--display);font-weight:800;letter-spacing:-0.02em;margin:0
 .toast{position:fixed;left:50%;bottom:calc(24px + var(--safe-bottom));transform:translateX(-50%);background:var(--ink);color:var(--white);padding:12px 18px;border-radius:14px;font-size:14px;font-weight:600;z-index:2000;display:none;max-width:90%;text-align:center}
 .coming{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center}
 .coming p{color:var(--ink-2);max-width:280px;margin:0;line-height:1.45}
+.page{background:var(--bg);padding:calc(16px + var(--safe-top)) 20px calc(20px + var(--safe-bottom));gap:16px;overflow-y:auto}
+.topbar{display:flex;align-items:center;gap:12px;min-height:48px}
+.field{display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:700}
+.input{height:52px;border-radius:14px;border:2px solid var(--ink);background:var(--white);padding:0 14px;font-size:16px;color:var(--ink);width:100%}
+.input::placeholder{color:#757575}
+.form-error{background:#FDE3E0;color:#7A1E14;border-radius:12px;padding:12px 14px;font-size:14px;font-weight:600;display:none}
+.link-btn{background:none;border:none;color:var(--teal-dark);font-weight:700;font-size:15px;min-height:44px;text-decoration:underline;text-underline-offset:3px}
+.card{background:var(--white);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:var(--white);border:1px solid #E2E2E2;width:100%;text-align:left;color:var(--ink)}
+.row-title{font-weight:700;font-size:16px}
+.row-sub{font-size:13px;color:var(--ink-2)}
+.section-label{font-size:14px;font-weight:800;color:var(--ink-2);margin-top:6px}
+.stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.loading{padding:20px 4px;color:var(--ink-2);font-size:15px}
 </style>
 </head>
 <body>
@@ -251,30 +265,90 @@ h1,h2{font-family:var(--display);font-weight:800;letter-spacing:-0.02em;margin:0
   <button class="btn btn-dark" data-go="explore">Find another quest</button>
 </section>
 
-<!-- PLACEHOLDER TABS -->
-<section class="screen" id="soon" aria-label="Coming soon">
-  <div class="coming">
-    <h1 id="soonTitle" style="font-size:28px"></h1>
-    <p id="soonText"></p>
-    <button class="btn btn-dark" data-go="explore" style="max-width:280px">Back to explore</button>
+<!-- AUTH -->
+<section class="screen page" id="auth" aria-label="Sign in">
+  <div class="topbar"><button class="icon-btn" aria-label="Back" id="authBack" style="background:var(--white)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button></div>
+  <h1 id="authTitle" style="font-size:32px">Sign in</h1>
+  <p id="authIntro" style="margin:0;color:var(--ink-2);line-height:1.45">Sign in to start quests and save your progress.</p>
+  <form id="authForm" style="display:flex;flex-direction:column;gap:14px" novalidate>
+    <label class="field" id="nameField" hidden>Your name<input class="input" id="authName" type="text" autocomplete="name" placeholder="Shown on quests you create"></label>
+    <label class="field">Email<input class="input" id="authEmail" type="email" autocomplete="email" required></label>
+    <label class="field">Password<input class="input" id="authPass" type="password" autocomplete="current-password" required minlength="6"></label>
+    <div class="form-error" id="authError" role="alert"></div>
+    <button class="btn btn-primary" type="submit" id="authSubmit">Sign in</button>
+  </form>
+  <button class="link-btn" id="authSwitch">New here? Create an account</button>
+  <button class="link-btn" id="authReset">Forgotten your password?</button>
+</section>
+
+<!-- MY QUESTS -->
+<section class="screen page" id="myquests" aria-label="My quests">
+  <div class="topbar"><button class="icon-btn" aria-label="Back to explore" data-go="explore" style="background:var(--white)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button></div>
+  <h1 style="font-size:32px">My quests</h1>
+  <div id="myList" style="display:flex;flex-direction:column;gap:10px"></div>
+</section>
+
+<!-- PROFILE -->
+<section class="screen page" id="profile" aria-label="Profile">
+  <div class="topbar"><button class="icon-btn" aria-label="Back to explore" data-go="explore" style="background:var(--white)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button></div>
+  <h1 id="pfName" style="font-size:32px"></h1>
+  <div id="pfEmail" style="color:var(--ink-2);margin-top:-8px"></div>
+  <div class="stat-grid">
+    <div class="stat" style="background:var(--white)"><b id="pfDone">0</b><span>completed</span></div>
+    <div class="stat" style="background:var(--white)"><b id="pfActive">0</b><span>in progress</span></div>
   </div>
+  <div class="card" id="seedCard" hidden>
+    <div class="row-title">Your database has no quests yet</div>
+    <div class="row-sub">Add the two demo quests around Sutton and Carshalton so you can test. You'll be listed as their creator.</div>
+    <button class="btn btn-dark" id="seedBtn">Add demo quests</button>
+  </div>
+  <div class="spacer"></div>
+  <button class="btn" id="signOutBtn">Sign out</button>
+</section>
+
+<!-- CREATE (next stage) -->
+<section class="screen page" id="create" aria-label="Create a quest">
+  <div class="topbar"><button class="icon-btn" aria-label="Back to explore" data-go="explore" style="background:var(--white)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button></div>
+  <h1 style="font-size:32px">Create a quest</h1>
+  <p style="margin:0;color:var(--ink-2);line-height:1.45">The quest builder with route recording arrives in the next stage.</p>
 </section>
 
 <div class="toast" id="toast" role="status"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-/* ---------- Demo data (replaced by Firebase in stage 2) ---------- */
-const QUESTS = [
+<script type="module">
+/* ================================================================
+   QuestPath web app, stage 2
+   Firebase settings: paste your own config here if it ever changes
+   ================================================================ */
+const firebaseConfig = {
+  apiKey: "AIzaSyBMo7EZA71iFvsbwBwWerHJ8YnOjE6mDs0",
+  authDomain: "questpath-295ab.firebaseapp.com",
+  projectId: "questpath-295ab",
+  storageBucket: "questpath-295ab.firebasestorage.app",
+  messagingSenderId: "205514896687",
+  appId: "1:205514896687:web:6340a1e1bd13ebbbd15dda"
+};
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, query, where, getDocs, doc, setDoc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const fbApp = initializeApp(firebaseConfig);
+const auth = getAuth(fbApp);
+const db = getFirestore(fbApp);
+
+/* ---------- Demo quests: written to Firestore once from the Profile screen ---------- */
+const DEMO_QUESTS = [
   {
-    id: 'sutton-green', title: 'The Secret of Sutton Green', creator: 'Gio',
+    slug: 'sutton-green', title: 'The Secret of Sutton Green',
     difficulty: 'Family', topic: 'History', price: 3, minutes: 60, ages: '6+', thumb: 'teal',
     desc: 'A demo quest around Sutton Green and the high street. Follow the clues from stop to stop and check in when you arrive.',
     safety: 'Road crossings on the high street. Children should be accompanied.',
     stops: [
       { name: 'Sutton Green', lat: 51.3712, lng: -0.1955, radius: 25,
         hints: ['Start where the grass is greenest and the benches face the road.', 'Look for the open green space north of the town centre.', 'Head to Sutton Green itself.'],
-        story: 'First stop found. Demo text: creators add a short story about each place here.' },
+        story: 'First stop found. Creators add a short story about each place here.' },
       { name: 'Trinity Church', lat: 51.3637, lng: -0.1938, radius: 25,
         hints: ['A tall spire watches over the shoppers below.', 'Walk south towards the busiest part of town.', 'Find the church near the high street.'],
         story: 'Second stop found. Each stop can tell a little local history.' },
@@ -284,7 +358,7 @@ const QUESTS = [
     ]
   },
   {
-    id: 'carshalton-ponds', title: 'Carshalton Ponds Mystery', creator: 'Gio',
+    slug: 'carshalton-ponds', title: 'Carshalton Ponds Mystery',
     difficulty: 'Moderate', topic: 'Nature', price: 0, minutes: 45, ages: '8+', thumb: 'orange',
     desc: 'A free demo quest around the ponds and old village. Short, easy walking with a few surprises.',
     safety: 'Paths run close to open water. Keep young children close.',
@@ -304,10 +378,6 @@ const QUESTS = [
 
 /* ---------- Helpers ---------- */
 const $ = (id) => document.getElementById(id);
-const store = {
-  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
-};
 function distanceM(a, b) {
   const R = 6371000, toRad = (x) => x * Math.PI / 180;
   const dLat = toRad(b.lat - a.lat), dLng = toRad(b.lng - a.lng);
@@ -321,42 +391,78 @@ function routeKm(q) {
 }
 function fmtDist(m) { return m >= 1000 ? (m / 1000).toFixed(1) + ' km' : Math.round(m) + ' m'; }
 function priceText(q) { return q.price ? '£' + q.price : 'Free'; }
-function toast(msg) { const t = $('toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = 'none', 2600); }
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = 'none', 2800); }
 function el(tag, props = {}, children = []) {
   const n = document.createElement(tag);
   Object.entries(props).forEach(([k, v]) => { if (k === 'class') n.className = v; else if (k === 'text') n.textContent = v; else n.setAttribute(k, v); });
   children.forEach((c) => n.appendChild(c));
   return n;
 }
+function validQuest(q) {
+  return q && typeof q.title === 'string' && Array.isArray(q.stops) && q.stops.length > 0 &&
+    q.stops.every((s) => typeof s.lat === 'number' && typeof s.lng === 'number' && Array.isArray(s.hints) && s.hints.length);
+}
+function authMessage(err) {
+  const code = (err && err.code) || '';
+  const map = {
+    'auth/invalid-email': 'That email address does not look right.',
+    'auth/invalid-credential': 'Email or password is incorrect.',
+    'auth/wrong-password': 'Email or password is incorrect.',
+    'auth/user-not-found': 'No account uses that email. Create one instead.',
+    'auth/email-already-in-use': 'An account already uses that email. Sign in instead.',
+    'auth/weak-password': 'Use a password of at least 6 characters.',
+    'auth/missing-password': 'Enter your password.',
+    'auth/too-many-requests': 'Too many attempts. Wait a few minutes and try again.',
+    'auth/network-request-failed': 'No connection. Check your internet and try again.',
+    'auth/unauthorized-domain': 'This website is not yet authorised in Firebase. Add it under Authentication, Settings, Authorised domains.',
+    'auth/operation-not-allowed': 'Email sign in is switched off in Firebase. Turn on Email/Password under Authentication, Sign-in method.'
+  };
+  return map[code] || 'Something went wrong (' + (code || 'unknown') + '). Try again.';
+}
 
 /* ---------- State ---------- */
 const state = {
-  screen: 'explore', quest: null, filter: 'all', query: '',
+  screen: 'explore', quests: [], loading: true, loadError: null,
+  quest: null, filter: 'all', query: '', user: null,
   pos: null, accuracy: null, testMode: false, lastDist: null,
-  progress: store.get('qp-progress', {})
+  progress: {}, afterAuth: null, authMode: 'signin'
 };
 function prog(q) {
-  if (!state.progress[q.id]) state.progress[q.id] = { stop: 0, hints: 1, started: null, stopStarted: null, hintsUsed: 0 };
+  if (!state.progress[q.id]) state.progress[q.id] = { stop: 0, hints: 1, hintsUsed: 0, started: null, stopStarted: null, completed: false };
   return state.progress[q.id];
 }
-function saveProgress() { store.set('qp-progress', state.progress); }
+async function saveProgress(q) {
+  if (!state.user) return;
+  const p = state.progress[q.id];
+  try {
+    await setDoc(doc(db, 'users', state.user.uid, 'progress', q.id), { ...p, questTitle: q.title, updatedAt: serverTimestamp() }, { merge: true });
+  } catch (e) {
+    console.error(e); toast('Progress could not be saved. Check your connection.');
+  }
+}
 
 function go(screen) {
   document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === screen));
   state.screen = screen;
   if (screen === 'explore') setTimeout(() => map.invalidateSize(), 50);
   if (screen === 'play') renderPlay();
+  if (screen === 'myquests') renderMyQuests();
+  if (screen === 'profile') renderProfile();
   window.scrollTo(0, 0);
 }
 document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-go]');
   if (b) go(b.dataset.go);
 });
+function requireAuth(then) {
+  if (state.user) return then();
+  state.afterAuth = then;
+  openAuth('signin', state.screen);
+}
 
 /* ---------- Map ---------- */
-const map = L.map('map', { zoomControl: false, attributionControl: true }).setView([51.366, -0.18], 14);
+const map = L.map('map', { zoomControl: false }).setView([51.366, -0.18], 14);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
-map.setView([51.366, -0.18], 14);
 let meMarker = null;
 const questMarkers = [];
 function pinIcon(label, free) {
@@ -382,7 +488,7 @@ function setPosition(lat, lng, accuracy) {
   state.pos = { lat, lng }; state.accuracy = accuracy;
   if (!meMarker) meMarker = L.marker([lat, lng], { icon: L.divIcon({ className: '', html: '<div class="me-dot"></div>', iconSize: [20, 20], iconAnchor: [10, 10] }), interactive: false }).addTo(map);
   else meMarker.setLatLng([lat, lng]);
-  renderList();
+  if (state.screen === 'explore') renderList();
   if (state.screen === 'play') updatePlayDistance();
 }
 if ('geolocation' in navigator) {
@@ -391,7 +497,7 @@ if ('geolocation' in navigator) {
     if (state.testMode) return;
     setPosition(p.coords.latitude, p.coords.longitude, p.coords.accuracy);
     if (!centred) { centred = true; map.setView([p.coords.latitude, p.coords.longitude], 15); }
-  }, (err) => {
+  }, () => {
     $('pGps').textContent = 'Location is off. Allow location access in your browser settings to play.';
   }, { enableHighAccuracy: true, maximumAge: 3000, timeout: 20000 });
 } else {
@@ -403,34 +509,54 @@ $('testToggle').addEventListener('click', () => {
   toast(state.testMode ? 'Test mode on: tap the map to set your position' : 'Test mode off: using real GPS');
 });
 
+/* ---------- Load quests from Firestore ---------- */
+async function loadQuests() {
+  state.loading = true; state.loadError = null; renderList();
+  try {
+    const snap = await getDocs(query(collection(db, 'quests'), where('status', '==', 'published')));
+    state.quests = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter(validQuest);
+  } catch (e) {
+    console.error(e);
+    state.loadError = e.code === 'permission-denied'
+      ? 'The database is blocking access. Publish the Firestore rules from the setup steps.'
+      : 'Could not load quests. Check your connection and try again.';
+  }
+  state.loading = false; renderList();
+  if (state.screen === 'profile') renderProfile();
+}
+
 /* ---------- Explore list ---------- */
 function thumbSvg(kind) {
   if (kind === 'orange') return '<svg width="72" height="54" viewBox="0 0 76 56" aria-hidden="true"><path d="M0 56 C 15 30, 30 46, 40 34 S 64 28, 76 40 L76 56 Z" fill="#FFE66D"/><circle cx="22" cy="18" r="8" fill="#1A1A1A"/></svg>';
   return '<svg width="72" height="54" viewBox="0 0 76 56" aria-hidden="true"><path d="M0 56 L22 22 L38 40 L54 14 L76 56 Z" fill="#4ECDC4"/><circle cx="58" cy="10" r="6" fill="#FFE66D"/></svg>';
 }
 function filtered() {
-  return QUESTS.filter((q) => {
+  return state.quests.filter((q) => {
     if (state.filter === 'free' && q.price) return false;
     if (['Family', 'Moderate', 'Hard'].includes(state.filter) && q.difficulty !== state.filter) return false;
-    if (state.query && !(q.title + ' ' + q.topic).toLowerCase().includes(state.query)) return false;
+    if (state.query && !((q.title || '') + ' ' + (q.topic || '')).toLowerCase().includes(state.query)) return false;
     return true;
   });
 }
 function renderList() {
-  const list = filtered();
   const box = $('questList');
   box.replaceChildren();
-  if (!list.length) { box.appendChild(el('div', { class: 'empty', text: 'No quests match. Try another filter or search.' })); }
+  if (state.loading) { box.appendChild(el('div', { class: 'loading', text: 'Loading quests' })); return; }
+  if (state.loadError) {
+    const retry = el('button', { class: 'btn', text: 'Try again' }); retry.addEventListener('click', loadQuests);
+    box.append(el('div', { class: 'empty', text: state.loadError }), retry); renderMarkers([]); return;
+  }
+  const list = filtered();
+  if (!state.quests.length) box.appendChild(el('div', { class: 'empty', text: 'No quests published yet. Sign in and open Profile to add the demo quests.' }));
+  else if (!list.length) box.appendChild(el('div', { class: 'empty', text: 'No quests match. Try another filter or search.' }));
   list.forEach((q) => {
     const thumb = el('div', { class: 'thumb' });
     thumb.style.background = q.thumb === 'orange' ? '#FF6B35' : '#0E6B66';
     thumb.innerHTML = thumbSvg(q.thumb);
-    let meta = routeKm(q) + ' km, ' + q.minutes + ' min, ' + q.stops.length + ' stops';
+    let meta = routeKm(q) + ' km, ' + (q.minutes || '?') + ' min, ' + q.stops.length + ' stops';
     if (state.pos) meta += ', ' + fmtDist(distanceM(state.pos, q.stops[0])) + ' away';
-    const tagRow = el('div', {}, [
-      el('span', { class: 'tag tag-' + q.difficulty.toLowerCase(), text: q.difficulty }),
-      el('span', { class: 'price', text: priceText(q) })
-    ]);
+    const diff = q.difficulty || 'Family';
+    const tagRow = el('div', {}, [el('span', { class: 'tag tag-' + diff.toLowerCase(), text: diff }), el('span', { class: 'price', text: priceText(q) })]);
     const info = el('div', { style: 'flex:1' }, [el('div', { class: 'qc-title', text: q.title }), el('div', { class: 'qc-meta', text: meta }), tagRow]);
     const card = el('button', { class: 'quest-card', 'aria-label': 'Open ' + q.title }, [thumb, info]);
     card.addEventListener('click', () => openDetail(q));
@@ -447,41 +573,35 @@ $('search').addEventListener('input', (e) => { state.query = e.target.value.trim
 document.querySelectorAll('[data-nav]').forEach((b) => b.addEventListener('click', () => {
   const n = b.dataset.nav;
   if (n === 'explore') return go('explore');
-  const copy = {
-    myquests: ['My quests', 'Your started and completed quests will live here once accounts are connected.'],
-    create: ['Create a quest', 'The quest builder with route recording is coming in the next stage.'],
-    profile: ['Your profile', 'Sign in, stats and settings are coming with Firebase in the next stage.']
-  }[n];
-  $('soonTitle').textContent = copy[0]; $('soonText').textContent = copy[1]; go('soon');
+  if (n === 'create') return go('create');
+  requireAuth(() => go(n));
 }));
 
 /* ---------- Detail ---------- */
 function openDetail(q) {
   state.quest = q;
-  $('dTags').replaceChildren(
-    el('span', { class: 'tag tag-' + q.difficulty.toLowerCase(), text: q.difficulty }),
-    el('span', { class: 'tag tag-topic', text: q.topic })
-  );
+  const diff = q.difficulty || 'Family';
+  $('dTags').replaceChildren(el('span', { class: 'tag tag-' + diff.toLowerCase(), text: diff }), el('span', { class: 'tag tag-topic', text: q.topic || 'Adventure' }));
   $('dTitle').textContent = q.title;
-  $('dBy').textContent = 'by ' + q.creator;
-  $('dStats').replaceChildren(...[[routeKm(q) + ' km', 'distance'], [q.minutes + ' min', 'duration'], [q.stops.length, 'stops'], [q.ages, 'ages']]
+  $('dBy').textContent = 'by ' + (q.creatorName || 'a QuestPath creator');
+  $('dStats').replaceChildren(...[[routeKm(q) + ' km', 'distance'], [(q.minutes || '?') + ' min', 'duration'], [q.stops.length, 'stops'], [q.ages || 'All', 'ages']]
     .map(([v, l]) => el('div', { class: 'stat' }, [el('b', { text: String(v) }), el('span', { text: l })])));
-  $('dDesc').textContent = q.desc;
-  $('dSafety').textContent = q.safety;
+  $('dDesc').textContent = q.desc || '';
+  $('dSafety').textContent = q.safety || 'Take care near roads and water.';
   $('dPrice').textContent = priceText(q);
   $('dPriceNote').textContent = q.price ? 'Payments arrive in a later stage' : 'Free to play';
   const p = state.progress[q.id];
-  $('startBtn').textContent = p && p.stop > 0 && p.stop < q.stops.length ? 'Continue quest' : 'Start quest';
+  $('startBtn').textContent = p && p.completed ? 'Play again' : p && (p.stop > 0 || p.hints > 1) ? 'Continue quest' : 'Start quest';
   go('detail');
 }
-$('startBtn').addEventListener('click', () => {
-  const q = state.quest, p = prog(q);
-  if (p.stop >= q.stops.length) { state.progress[q.id] = null; delete state.progress[q.id]; prog(q); }
-  const pp = prog(q);
-  if (!pp.started) pp.started = Date.now();
-  if (!pp.stopStarted) pp.stopStarted = Date.now();
-  saveProgress(); state.lastDist = null; go('play');
-});
+$('startBtn').addEventListener('click', () => requireAuth(() => {
+  const q = state.quest;
+  if (state.progress[q.id] && state.progress[q.id].completed) delete state.progress[q.id];
+  const p = prog(q);
+  if (!p.started) p.started = Date.now();
+  if (!p.stopStarted) p.stopStarted = Date.now();
+  saveProgress(q); state.lastDist = null; go('play');
+}));
 
 /* ---------- Play ---------- */
 function renderPlay() {
@@ -494,31 +614,28 @@ function renderPlay() {
   $('pHint').textContent = stop.hints[p.hints - 1];
   $('revealBtn').hidden = p.hints >= stop.hints.length;
   $('jumpBtn').hidden = !state.testMode;
-  $('checkinNote').textContent = 'Check in unlocks within ' + stop.radius + ' m of the stop';
+  $('checkinNote').textContent = 'Check in unlocks within ' + (stop.radius || 25) + ' m of the stop';
   updatePlayDistance();
 }
 function updatePlayDistance() {
   const q = state.quest; if (!q) return;
-  const p = prog(q), stop = q.stops[p.stop];
+  const p = prog(q), stop = q.stops[p.stop]; if (!stop) return;
   if (!state.pos) { $('pDist').textContent = '...'; $('checkinBtn').disabled = true; return; }
   const d = distanceM(state.pos, stop);
   $('pDist').textContent = fmtDist(d);
-  let temp = '';
-  if (state.lastDist !== null && Math.abs(d - state.lastDist) > 3) temp = d < state.lastDist ? 'Getting warmer' : 'Getting colder';
-  if (temp) $('pTemp').textContent = temp;
+  if (state.lastDist !== null && Math.abs(d - state.lastDist) > 3) $('pTemp').textContent = d < state.lastDist ? 'Getting warmer' : 'Getting colder';
   state.lastDist = d;
   const closeness = Math.max(0, Math.min(1, 1 - d / 800));
   $('pRing').setAttribute('stroke-dashoffset', String(603 * (1 - closeness)));
   const acc = state.accuracy ? Math.round(state.accuracy) : null;
   $('pGps').textContent = state.testMode ? 'Test mode position' : acc ? 'GPS accurate to about ' + acc + ' m' : '';
-  // allow for GPS wobble: radius plus up to 15 m of reported accuracy
-  const allowance = stop.radius + Math.min(15, state.accuracy || 0);
+  const allowance = (stop.radius || 25) + Math.min(15, state.accuracy || 0);
   const inRange = d <= allowance;
   $('checkinBtn').disabled = !inRange;
   if (inRange) $('pTemp').textContent = 'You are here!';
 }
 $('revealBtn').addEventListener('click', () => {
-  const p = prog(state.quest); p.hints++; p.hintsUsed++; saveProgress(); renderPlay();
+  const q = state.quest, p = prog(q); p.hints++; p.hintsUsed++; saveProgress(q); renderPlay();
 });
 $('jumpBtn').addEventListener('click', () => {
   const stop = state.quest.stops[prog(state.quest).stop];
@@ -527,15 +644,17 @@ $('jumpBtn').addEventListener('click', () => {
 $('checkinBtn').addEventListener('click', () => {
   const q = state.quest, p = prog(q), stop = q.stops[p.stop];
   const mins = Math.max(1, Math.round((Date.now() - (p.stopStarted || Date.now())) / 60000));
-  const hintsOnStop = p.hints - 1;
+  const extra = p.hints - 1;
   $('fKicker').textContent = 'Stop ' + (p.stop + 1) + ' of ' + q.stops.length + ' found';
   $('fTitle').textContent = stop.name;
-  $('fStory').textContent = stop.story;
-  $('fPills').replaceChildren(el('span', { class: 'pill', text: mins + ' min' }), el('span', { class: 'pill', text: hintsOnStop === 0 ? 'No extra hints' : hintsOnStop + (hintsOnStop === 1 ? ' extra hint' : ' extra hints') }));
+  $('fStory').textContent = stop.story || '';
+  $('fPills').replaceChildren(el('span', { class: 'pill', text: mins + ' min' }), el('span', { class: 'pill', text: extra === 0 ? 'No extra hints' : extra + (extra === 1 ? ' extra hint' : ' extra hints') }));
   $('fPhoto').style.display = 'none'; $('photoLabel').textContent = 'Take a memory photo';
   const last = p.stop === q.stops.length - 1;
   $('nextBtn').textContent = last ? 'Finish quest' : 'On to stop ' + (p.stop + 2);
-  p.stop++; p.hints = 1; p.stopStarted = Date.now(); saveProgress();
+  p.stop++; p.hints = 1; p.stopStarted = Date.now();
+  if (p.stop >= q.stops.length) { p.completed = true; p.finished = Date.now(); }
+  saveProgress(q);
   if (navigator.vibrate) navigator.vibrate([60, 40, 120]);
   go('found');
   const badge = document.querySelector('#found .badge'); badge.classList.remove('badge-pop'); void badge.offsetWidth; badge.classList.add('badge-pop');
@@ -548,15 +667,126 @@ $('photoInput').addEventListener('change', (e) => {
 $('nextBtn').addEventListener('click', () => {
   const q = state.quest, p = prog(q);
   state.lastDist = null; $('pTemp').textContent = '';
-  if (p.stop >= q.stops.length) {
-    const mins = Math.max(1, Math.round((Date.now() - p.started) / 60000));
+  if (p.completed) {
+    const mins = Math.max(1, Math.round(((p.finished || Date.now()) - p.started) / 60000));
     $('cTitle').textContent = q.title;
     $('cPills').replaceChildren(el('span', { class: 'pill', text: q.stops.length + ' stops' }), el('span', { class: 'pill', text: mins + ' min total' }), el('span', { class: 'pill', text: p.hintsUsed + ' hints used' }));
     go('complete');
   } else go('play');
 });
 
-renderList();
+/* ---------- Auth ---------- */
+let authReturn = 'explore';
+function openAuth(mode, returnTo) {
+  state.authMode = mode; authReturn = returnTo || 'explore';
+  const create = mode === 'signup';
+  $('authTitle').textContent = create ? 'Create your account' : 'Sign in';
+  $('authIntro').textContent = create ? 'Save your progress and, soon, create your own quests.' : 'Sign in to start quests and save your progress.';
+  $('nameField').hidden = !create;
+  $('authSubmit').textContent = create ? 'Create account' : 'Sign in';
+  $('authSwitch').textContent = create ? 'Already have an account? Sign in' : 'New here? Create an account';
+  $('authReset').hidden = create;
+  $('authPass').setAttribute('autocomplete', create ? 'new-password' : 'current-password');
+  $('authError').style.display = 'none';
+  go('auth');
+}
+function showAuthError(msg) { const e = $('authError'); e.textContent = msg; e.style.display = 'block'; }
+$('authBack').addEventListener('click', () => { state.afterAuth = null; go(authReturn); });
+$('authSwitch').addEventListener('click', () => openAuth(state.authMode === 'signup' ? 'signin' : 'signup', authReturn));
+$('authReset').addEventListener('click', async () => {
+  const email = $('authEmail').value.trim();
+  if (!email) return showAuthError('Enter your email above, then tap this again.');
+  try { await sendPasswordResetEmail(auth, email); toast('Reset link sent to ' + email); }
+  catch (e) { showAuthError(authMessage(e)); }
+});
+$('authForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = $('authEmail').value.trim(), pass = $('authPass').value, name = $('authName').value.trim();
+  if (state.authMode === 'signup' && !name) return showAuthError('Enter your name.');
+  const btn = $('authSubmit'); btn.disabled = true; const label = btn.textContent; btn.textContent = 'Please wait';
+  try {
+    if (state.authMode === 'signup') {
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      await updateProfile(cred.user, { displayName: name });
+      await setDoc(doc(db, 'users', cred.user.uid), { displayName: name, email, creatorStatus: 'unqualified', createdAt: serverTimestamp() }, { merge: true });
+    } else {
+      await signInWithEmailAndPassword(auth, email, pass);
+    }
+    $('authPass').value = '';
+  } catch (err) {
+    console.error(err); showAuthError(authMessage(err));
+  } finally { btn.disabled = false; btn.textContent = label; }
+});
+
+onAuthStateChanged(auth, async (user) => {
+  state.user = user; state.progress = {};
+  if (user) {
+    try {
+      const snap = await getDocs(collection(db, 'users', user.uid, 'progress'));
+      snap.forEach((d) => { state.progress[d.id] = d.data(); });
+    } catch (e) { console.error(e); }
+    if (state.screen === 'auth') {
+      const next = state.afterAuth; state.afterAuth = null;
+      toast('Signed in as ' + (user.displayName || user.email));
+      if (next) next(); else go(authReturn);
+    }
+  }
+  if (state.screen === 'profile' || state.screen === 'myquests') user ? go(state.screen) : go('explore');
+});
+
+/* ---------- My quests ---------- */
+function renderMyQuests() {
+  const box = $('myList'); box.replaceChildren();
+  const entries = Object.entries(state.progress);
+  if (!entries.length) {
+    const b = el('button', { class: 'btn btn-primary', text: 'Find a quest' }); b.addEventListener('click', () => go('explore'));
+    box.append(el('div', { class: 'empty', text: 'You have not started a quest yet.' }), b); return;
+  }
+  const active = entries.filter(([, p]) => !p.completed), done = entries.filter(([, p]) => p.completed);
+  const section = (label, list, sub) => {
+    if (!list.length) return;
+    box.appendChild(el('div', { class: 'section-label', text: label }));
+    list.forEach(([id, p]) => {
+      const q = state.quests.find((x) => x.id === id);
+      const row = el('button', { class: 'row' }, [el('div', { style: 'flex:1' }, [el('div', { class: 'row-title', text: (q && q.title) || p.questTitle || 'Quest' }), el('div', { class: 'row-sub', text: sub(p, q) })])]);
+      row.addEventListener('click', () => { if (q) openDetail(q); else toast('This quest is no longer available.'); });
+      box.appendChild(row);
+    });
+  };
+  section('In progress', active, (p, q) => 'Stop ' + (p.stop + 1) + (q ? ' of ' + q.stops.length : ''));
+  section('Completed', done, (p) => p.hintsUsed + ' hints used');
+}
+
+/* ---------- Profile ---------- */
+function renderProfile() {
+  if (!state.user) return;
+  $('pfName').textContent = state.user.displayName || 'Explorer';
+  $('pfEmail').textContent = state.user.email;
+  const all = Object.values(state.progress);
+  $('pfDone').textContent = all.filter((p) => p.completed).length;
+  $('pfActive').textContent = all.filter((p) => !p.completed).length;
+  $('seedCard').hidden = state.loading || !!state.loadError || state.quests.length > 0;
+}
+$('seedBtn').addEventListener('click', async () => {
+  if (!state.user) return;
+  const btn = $('seedBtn'); btn.disabled = true; btn.textContent = 'Adding';
+  try {
+    const batch = writeBatch(db);
+    DEMO_QUESTS.forEach((q) => {
+      const { slug, ...data } = q;
+      batch.set(doc(db, 'quests', slug), { ...data, creatorId: state.user.uid, creatorName: state.user.displayName || 'QuestPath', status: 'published', createdAt: serverTimestamp() });
+    });
+    await batch.commit();
+    toast('Demo quests added');
+    await loadQuests();
+  } catch (e) {
+    console.error(e);
+    toast(e.code === 'permission-denied' ? 'Blocked by database rules. Publish the rules from the setup steps.' : 'Could not add quests. Try again.');
+  } finally { btn.disabled = false; btn.textContent = 'Add demo quests'; }
+});
+$('signOutBtn').addEventListener('click', async () => { await signOut(auth); toast('Signed out'); go('explore'); });
+
+loadQuests();
 </script>
 </body>
 </html>
