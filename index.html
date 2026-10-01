@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0A4F4B">
+<title>QuestPath</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  --orange:#FF6B35; --teal:#4ECDC4; --teal-dark:#0E6B66; --teal-deep:#0A4F4B;
+  --gold:#FFE66D; --ink:#1A1A1A; --ink-2:#4A4A4A; --bg:#F5F5F5; --white:#FFFFFF;
+  --error:#E74C3C; --mint:#D6F3F0; --peach:#FFE0D4; --butter:#FFF6C7;
+  --display:'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
+  --body:'Figtree', 'Segoe UI', system-ui, sans-serif;
+  --safe-top:env(safe-area-inset-top,0px); --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:var(--body);color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased}
+button,input{font-family:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--teal-dark);outline-offset:2px}
+.screen{position:fixed;inset:0;display:none;flex-direction:column;overflow:hidden}
+.screen.active{display:flex}
+h1,h2{font-family:var(--display);font-weight:800;letter-spacing:-0.02em;margin:0}
+
+/* Buttons */
+.btn{height:56px;border-radius:28px;border:2px solid var(--ink);font-weight:800;font-size:17px;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;text-decoration:none;color:var(--ink);background:var(--white)}
+.btn-primary{background:var(--orange);box-shadow:0 4px 0 var(--ink)}
+.btn-primary:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.btn-primary:disabled{background:#D9D9D9;color:#4A4A4A;box-shadow:none;border-color:#9A9A9A;cursor:not-allowed}
+.btn-dark{background:var(--ink);color:var(--white)}
+.icon-btn{width:48px;height:48px;border-radius:24px;border:none;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.chip{height:38px;padding:0 16px;border-radius:19px;border:2px solid var(--ink);background:var(--white);color:var(--ink);font-weight:600;font-size:14px;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--white)}
+.tag{font-size:12px;font-weight:700;padding:4px 10px;border-radius:8px;display:inline-block}
+.tag-family{background:var(--mint);color:var(--teal-deep)}
+.tag-moderate{background:var(--peach);color:#8A2E0C}
+.tag-hard{background:#F8D3CF;color:#7A1E14}
+.tag-topic{background:var(--butter);color:#5C4A00}
+
+/* Explore */
+#map{position:absolute;inset:0;z-index:0;background:#E4EDE2}
+.search-bar{position:absolute;left:16px;right:16px;top:calc(16px + var(--safe-top));display:flex;gap:10px;z-index:500}
+.search{flex:1;display:flex;align-items:center;gap:10px;height:52px;padding:0 16px;background:var(--white);border:2px solid var(--ink);border-radius:26px}
+.search input{border:none;outline:none;flex:1;font-size:16px;background:transparent;color:var(--ink);min-width:0}
+.search input::placeholder{color:#757575}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.test-pill{height:52px;padding:0 14px;border-radius:26px;border:2px solid var(--ink);background:var(--white);font-weight:700;font-size:13px}
+.test-pill[aria-pressed="true"]{background:var(--gold)}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:500;background:var(--white);border-radius:28px 28px 0 0;padding:12px 20px 0;box-shadow:0 -6px 24px rgba(26,26,26,.12);display:flex;flex-direction:column;gap:14px;max-height:56%}
+.handle{width:44px;height:5px;border-radius:3px;background:#D0D0D0;align-self:center}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.quest-list{display:flex;flex-direction:column;gap:10px;overflow-y:auto;padding-bottom:12px}
+.quest-card{display:flex;gap:14px;align-items:center;padding:10px;border-radius:18px;background:var(--bg);border:none;text-align:left;width:100%;color:var(--ink)}
+.thumb{width:72px;height:72px;flex-shrink:0;border-radius:14px;overflow:hidden;display:flex;align-items:flex-end;justify-content:center}
+.qc-title{font-family:var(--display);font-weight:800;font-size:17px;line-height:1.15}
+.qc-meta{font-size:13px;color:var(--ink-2);margin:4px 0 6px}
+.price{font-weight:800;font-size:14px;margin-left:8px}
+.empty{padding:20px 4px;color:var(--ink-2);font-size:15px}
+.nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid #E2E2E2;margin:0 -20px;padding:6px 8px calc(10px + var(--safe-bottom));background:var(--white)}
+.nav button{min-height:52px;border:none;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;font-weight:600;color:var(--ink-2)}
+.nav button[aria-current="page"]{color:var(--ink);font-weight:800}
+.pin{width:34px;height:34px;border-radius:17px 17px 17px 4px;background:var(--orange);border:3px solid var(--ink);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;font-family:var(--body)}
+.pin.free{background:var(--gold)}
+.me-dot{width:20px;height:20px;border-radius:10px;background:var(--teal-dark);border:4px solid var(--white);box-shadow:0 0 0 10px rgba(78,205,196,.25)}
+
+/* Detail */
+#detail{background:var(--white);overflow-y:auto}
+.hero{position:relative;height:250px;flex-shrink:0;background:var(--teal-dark);overflow:hidden}
+.hero svg{position:absolute;inset:0;width:100%;height:100%}
+.back{position:absolute;left:16px;top:calc(16px + var(--safe-top));background:var(--white)}
+.detail-body{padding:20px;display:flex;flex-direction:column;gap:16px;flex:1}
+.detail-title{font-size:30px;line-height:1.05}
+.byline{font-size:14px;color:var(--ink-2);margin-top:6px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.stat{padding:12px 4px;border-radius:14px;background:var(--bg);text-align:center}
+.stat b{display:block;font-family:var(--display);font-size:18px}
+.stat span{font-size:12px;color:var(--ink-2)}
+.safety{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:14px;background:var(--butter);font-size:14px;line-height:1.4;color:#3D3200}
+.buybar{display:flex;align-items:center;gap:16px;padding:14px 20px calc(18px + var(--safe-bottom));border-top:1px solid #E2E2E2;background:var(--white);position:sticky;bottom:0}
+.buybar .amount{font-family:var(--display);font-weight:800;font-size:26px}
+.buybar small{font-size:12px;color:var(--ink-2)}
+
+/* Play */
+#play{background:var(--teal-deep);color:var(--white);padding:calc(16px + var(--safe-top)) 20px calc(20px + var(--safe-bottom));gap:16px;overflow-y:auto}
+.progress-row{display:flex;align-items:center;gap:12px}
+.segs{display:grid;gap:4px}
+.seg{height:6px;border-radius:3px;background:rgba(255,255,255,.22)}
+.seg.done{background:var(--gold)}.seg.now{background:var(--orange)}
+.dial{position:relative;height:260px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dial svg{position:absolute}
+.dist{font-family:var(--display);font-weight:800;font-size:46px;line-height:1;text-align:center}
+.temp{font-size:15px;font-weight:700;color:var(--gold);text-align:center;margin-top:6px;min-height:20px}
+.gps-note{font-size:13px;color:#CFEDEA;text-align:center}
+.hint-card{background:var(--white);color:var(--ink);border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.hint-label{font-size:13px;font-weight:800;color:var(--teal-dark)}
+.hint-text{font-family:var(--display);font-weight:600;font-size:19px;line-height:1.3}
+.hint-old{font-size:15px;color:var(--ink-2);line-height:1.4}
+.reveal{height:48px;border-radius:24px;border:2px dashed var(--teal-dark);background:transparent;color:var(--teal-dark);font-weight:700;font-size:15px}
+.checkin-note{text-align:center;font-size:13px;color:#CFEDEA;margin-top:-6px}
+.test-jump{height:44px;border-radius:22px;border:2px dashed var(--gold);background:transparent;color:var(--gold);font-weight:700;font-size:14px}
+
+/* Found and complete */
+#found,#complete{background:var(--gold);align-items:center;text-align:center;padding:calc(36px + var(--safe-top)) 24px calc(20px + var(--safe-bottom));gap:16px;overflow-y:auto}
+#complete{background:var(--orange)}
+.found-kicker{font-size:14px;font-weight:800}
+.badge{width:200px;height:200px;flex-shrink:0}
+.badge-pop{animation:pop .5s cubic-bezier(.3,1.6,.5,1)}
+@keyframes pop{from{transform:scale(.4) rotate(-20deg);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.badge-pop{animation:none}}
+.found-title{font-size:34px;line-height:1.05}
+.found-story{font-size:16px;line-height:1.45;max-width:320px;margin:0}
+.pills{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.pill{font-size:14px;font-weight:700;padding:8px 14px;border-radius:18px;background:var(--white);border:2px solid var(--ink)}
+.memory{width:100%;max-width:320px;border-radius:18px;border:3px solid var(--ink);display:none}
+.spacer{flex:1}
+.toast{position:fixed;left:50%;bottom:calc(24px + var(--safe-bottom));transform:translateX(-50%);background:var(--ink);color:var(--white);padding:12px 18px;border-radius:14px;font-size:14px;font-weight:600;z-index:2000;display:none;max-width:90%;text-align:center}
+.coming{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center}
+.coming p{color:var(--ink-2);max-width:280px;margin:0;line-height:1.45}
+</style>
+</head>
+<body>
+
+<!-- EXPLORE -->
+<section class="screen active" id="explore" aria-label="Explore quests">
+  <div id="map" aria-label="Map of quests"></div>
+  <div class="search-bar">
+    <label class="search">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      <span class="sr">Search quests</span>
+      <input id="search" type="search" placeholder="Search quests" autocomplete="off">
+    </label>
+    <button class="test-pill" id="testToggle" aria-pressed="false" title="Test mode: tap the map to set your position">Test</button>
+  </div>
+  <div class="sheet">
+    <div class="handle"></div>
+    <h1 style="font-size:26px">Quests near you</h1>
+    <div class="chips" id="chips">
+      <button class="chip" aria-pressed="true" data-filter="all">All</button>
+      <button class="chip" aria-pressed="false" data-filter="Family">Family</button>
+      <button class="chip" aria-pressed="false" data-filter="Moderate">Moderate</button>
+      <button class="chip" aria-pressed="false" data-filter="Hard">Hard</button>
+      <button class="chip" aria-pressed="false" data-filter="free">Free</button>
+    </div>
+    <div class="quest-list" id="questList"></div>
+    <nav class="nav" aria-label="Main">
+      <button aria-current="page" data-nav="explore"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF6B35" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>Explore</button>
+      <button data-nav="myquests"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h14v16l-7-4-7 4z"/></svg>My quests</button>
+      <button data-nav="create"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Create</button>
+      <button data-nav="profile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Profile</button>
+    </nav>
+  </div>
+</section>
+
+<!-- DETAIL -->
+<section class="screen" id="detail" aria-label="Quest details">
+  <div class="hero">
+    <svg viewBox="0 0 390 250" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+      <circle cx="300" cy="70" r="30" fill="#FFE66D"/>
+      <path d="M0 250 L90 130 L150 190 L240 90 L390 250 Z" fill="#4ECDC4"/>
+      <path d="M0 250 L60 200 L130 230 L210 170 L300 210 L390 160 L390 250 Z" fill="#0A4F4B"/>
+      <path d="M40 235 C 100 200, 150 220, 200 185 S 300 150, 340 120" stroke="#FF6B35" stroke-width="4" stroke-dasharray="2 10" stroke-linecap="round" fill="none"/>
+      <circle cx="340" cy="120" r="9" fill="#FF6B35" stroke="#1A1A1A" stroke-width="3"/>
+    </svg>
+    <button class="icon-btn back" aria-label="Back to explore" data-go="explore"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+  </div>
+  <div class="detail-body">
+    <div id="dTags" style="display:flex;gap:8px"></div>
+    <div><h1 class="detail-title" id="dTitle"></h1><div class="byline" id="dBy"></div></div>
+    <div class="stats" id="dStats"></div>
+    <p id="dDesc" style="margin:0;font-size:15px;line-height:1.5"></p>
+    <div class="safety"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5C4A00" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg><div id="dSafety"></div></div>
+  </div>
+  <div class="buybar">
+    <div><div class="amount" id="dPrice"></div><small id="dPriceNote"></small></div>
+    <button class="btn btn-primary" id="startBtn" style="flex:1">Start quest</button>
+  </div>
+</section>
+
+<!-- PLAY -->
+<section class="screen" id="play" aria-label="Active quest">
+  <div class="progress-row">
+    <button class="icon-btn" aria-label="Pause quest" data-go="detail" style="background:rgba(255,255,255,.14)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg></button>
+    <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+      <div id="pStep" style="font-size:13px;font-weight:600;color:#CFEDEA"></div>
+      <div class="segs" id="pSegs"></div>
+    </div>
+  </div>
+  <div class="dial">
+    <svg width="260" height="260" viewBox="0 0 260 260" aria-hidden="true">
+      <circle cx="130" cy="130" r="124" fill="none" stroke="rgba(78,205,196,.25)" stroke-width="2"/>
+      <circle cx="130" cy="130" r="96" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="10"/>
+      <circle id="pRing" cx="130" cy="130" r="96" fill="none" stroke="#FFE66D" stroke-width="10" stroke-linecap="round" stroke-dasharray="603" stroke-dashoffset="603" transform="rotate(-90 130 130)" style="transition:stroke-dashoffset .6s"/>
+      <circle cx="130" cy="130" r="74" fill="#0E6B66"/>
+    </svg>
+    <div style="position:relative">
+      <div class="dist" id="pDist" aria-live="polite">...</div>
+      <div class="temp" id="pTemp"></div>
+    </div>
+  </div>
+  <div class="gps-note" id="pGps">Finding your location</div>
+  <div class="hint-card">
+    <div class="hint-label" id="pHintLabel"></div>
+    <div id="pOldHints" style="display:flex;flex-direction:column;gap:6px"></div>
+    <div class="hint-text" id="pHint"></div>
+    <button class="reveal" id="revealBtn">Reveal next hint</button>
+  </div>
+  <div class="spacer"></div>
+  <button class="test-jump" id="jumpBtn" hidden>Test mode: jump to this stop</button>
+  <button class="btn btn-primary" id="checkinBtn" disabled>I'm here</button>
+  <div class="checkin-note" id="checkinNote"></div>
+</section>
+
+<!-- FOUND -->
+<section class="screen" id="found" aria-label="Stop found">
+  <div class="found-kicker" id="fKicker"></div>
+  <svg class="badge" viewBox="0 0 210 210" aria-hidden="true">
+    <path d="M105 4 L118 30 L146 18 L148 48 L178 50 L168 78 L196 92 L174 112 L192 136 L162 144 L164 174 L134 168 L122 196 L105 174 L88 196 L76 168 L46 174 L48 144 L18 136 L36 112 L14 92 L42 78 L32 50 L62 48 L64 18 L92 30 Z" fill="#FF6B35" stroke="#1A1A1A" stroke-width="3"/>
+    <circle cx="105" cy="102" r="56" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="3"/>
+    <path d="M80 102 L98 120 L132 86" fill="none" stroke="#0E6B66" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <h1 class="found-title" id="fTitle"></h1>
+  <p class="found-story" id="fStory"></p>
+  <div class="pills" id="fPills"></div>
+  <img class="memory" id="fPhoto" alt="Your memory photo">
+  <div class="spacer"></div>
+  <label class="btn" style="cursor:pointer">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+    <span id="photoLabel">Take a memory photo</span>
+    <input type="file" accept="image/*" capture="environment" id="photoInput" class="sr">
+  </label>
+  <button class="btn btn-dark" id="nextBtn">On to the next stop</button>
+</section>
+
+<!-- COMPLETE -->
+<section class="screen" id="complete" aria-label="Quest complete">
+  <div class="found-kicker">Quest complete</div>
+  <svg class="badge" viewBox="0 0 210 210" aria-hidden="true">
+    <circle cx="105" cy="105" r="96" fill="#FFE66D" stroke="#1A1A1A" stroke-width="3"/>
+    <circle cx="105" cy="105" r="70" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="3"/>
+    <path d="M105 50 L120 95 L105 88 L90 95 Z" fill="#FF6B35" stroke="#1A1A1A" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M105 160 L90 115 L105 122 L120 115 Z" fill="#4ECDC4" stroke="#1A1A1A" stroke-width="3" stroke-linejoin="round"/>
+  </svg>
+  <h1 class="found-title" id="cTitle"></h1>
+  <div class="pills" id="cPills"></div>
+  <div class="spacer"></div>
+  <button class="btn btn-dark" data-go="explore">Find another quest</button>
+</section>
+
+<!-- PLACEHOLDER TABS -->
+<section class="screen" id="soon" aria-label="Coming soon">
+  <div class="coming">
+    <h1 id="soonTitle" style="font-size:28px"></h1>
+    <p id="soonText"></p>
+    <button class="btn btn-dark" data-go="explore" style="max-width:280px">Back to explore</button>
+  </div>
+</section>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+/* ---------- Demo data (replaced by Firebase in stage 2) ---------- */
+const QUESTS = [
+  {
+    id: 'sutton-green', title: 'The Secret of Sutton Green', creator: 'Gio',
+    difficulty: 'Family', topic: 'History', price: 3, minutes: 60, ages: '6+', thumb: 'teal',
+    desc: 'A demo quest around Sutton Green and the high street. Follow the clues from stop to stop and check in when you arrive.',
+    safety: 'Road crossings on the high street. Children should be accompanied.',
+    stops: [
+      { name: 'Sutton Green', lat: 51.3712, lng: -0.1955, radius: 25,
+        hints: ['Start where the grass is greenest and the benches face the road.', 'Look for the open green space north of the town centre.', 'Head to Sutton Green itself.'],
+        story: 'First stop found. Demo text: creators add a short story about each place here.' },
+      { name: 'Trinity Church', lat: 51.3637, lng: -0.1938, radius: 25,
+        hints: ['A tall spire watches over the shoppers below.', 'Walk south towards the busiest part of town.', 'Find the church near the high street.'],
+        story: 'Second stop found. Each stop can tell a little local history.' },
+      { name: 'Manor Park', lat: 51.3605, lng: -0.1886, radius: 30,
+        hints: ['End your journey where the trees meet the station.', 'Head east towards the park near the railway.', 'Finish in Manor Park.'],
+        story: 'Final stop found. Well done, explorer.' }
+    ]
+  },
+  {
+    id: 'carshalton-ponds', title: 'Carshalton Ponds Mystery', creator: 'Gio',
+    difficulty: 'Moderate', topic: 'Nature', price: 0, minutes: 45, ages: '8+', thumb: 'orange',
+    desc: 'A free demo quest around the ponds and old village. Short, easy walking with a few surprises.',
+    safety: 'Paths run close to open water. Keep young children close.',
+    stops: [
+      { name: 'The ponds', lat: 51.3683, lng: -0.1660, radius: 25,
+        hints: ['Ducks know this place better than anyone.', 'Find the water in the heart of the village.', 'Go to Carshalton Ponds.'],
+        story: 'First stop found. The ponds are the heart of the village.' },
+      { name: 'All Saints Church', lat: 51.3677, lng: -0.1640, radius: 25,
+        hints: ['Bells ring above the water.', 'Look for the old church beside the ponds.', 'Find All Saints Church.'],
+        story: 'Second stop found.' },
+      { name: 'Grove Park', lat: 51.3664, lng: -0.1622, radius: 30,
+        hints: ['A quiet green escape just south of the bells.', 'Follow the water into the park.', 'Finish in Grove Park.'],
+        story: 'Final stop found. Quest complete!' }
+    ]
+  }
+];
+
+/* ---------- Helpers ---------- */
+const $ = (id) => document.getElementById(id);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+function distanceM(a, b) {
+  const R = 6371000, toRad = (x) => x * Math.PI / 180;
+  const dLat = toRad(b.lat - a.lat), dLng = toRad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+function routeKm(q) {
+  let m = 0;
+  for (let i = 1; i < q.stops.length; i++) m += distanceM(q.stops[i - 1], q.stops[i]);
+  return (m / 1000).toFixed(1);
+}
+function fmtDist(m) { return m >= 1000 ? (m / 1000).toFixed(1) + ' km' : Math.round(m) + ' m'; }
+function priceText(q) { return q.price ? '£' + q.price : 'Free'; }
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = 'none', 2600); }
+function el(tag, props = {}, children = []) {
+  const n = document.createElement(tag);
+  Object.entries(props).forEach(([k, v]) => { if (k === 'class') n.className = v; else if (k === 'text') n.textContent = v; else n.setAttribute(k, v); });
+  children.forEach((c) => n.appendChild(c));
+  return n;
+}
+
+/* ---------- State ---------- */
+const state = {
+  screen: 'explore', quest: null, filter: 'all', query: '',
+  pos: null, accuracy: null, testMode: false, lastDist: null,
+  progress: store.get('qp-progress', {})
+};
+function prog(q) {
+  if (!state.progress[q.id]) state.progress[q.id] = { stop: 0, hints: 1, started: null, stopStarted: null, hintsUsed: 0 };
+  return state.progress[q.id];
+}
+function saveProgress() { store.set('qp-progress', state.progress); }
+
+function go(screen) {
+  document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === screen));
+  state.screen = screen;
+  if (screen === 'explore') setTimeout(() => map.invalidateSize(), 50);
+  if (screen === 'play') renderPlay();
+  window.scrollTo(0, 0);
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-go]');
+  if (b) go(b.dataset.go);
+});
+
+/* ---------- Map ---------- */
+const map = L.map('map', { zoomControl: false, attributionControl: true }).setView([51.366, -0.18], 14);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
+map.setView([51.366, -0.18], 14);
+let meMarker = null;
+const questMarkers = [];
+function pinIcon(label, free) {
+  return L.divIcon({ className: '', html: '<div class="pin' + (free ? ' free' : '') + '">' + label + '</div>', iconSize: [34, 34], iconAnchor: [4, 34] });
+}
+function renderMarkers(list) {
+  questMarkers.forEach((m) => m.remove());
+  questMarkers.length = 0;
+  list.forEach((q, i) => {
+    const m = L.marker([q.stops[0].lat, q.stops[0].lng], { icon: pinIcon(i + 1, !q.price), title: q.title }).addTo(map);
+    m.on('click', () => openDetail(q));
+    questMarkers.push(m);
+  });
+}
+map.on('click', (e) => {
+  if (!state.testMode) return;
+  setPosition(e.latlng.lat, e.latlng.lng, 5);
+  toast('Test position set');
+});
+
+/* ---------- Location ---------- */
+function setPosition(lat, lng, accuracy) {
+  state.pos = { lat, lng }; state.accuracy = accuracy;
+  if (!meMarker) meMarker = L.marker([lat, lng], { icon: L.divIcon({ className: '', html: '<div class="me-dot"></div>', iconSize: [20, 20], iconAnchor: [10, 10] }), interactive: false }).addTo(map);
+  else meMarker.setLatLng([lat, lng]);
+  renderList();
+  if (state.screen === 'play') updatePlayDistance();
+}
+if ('geolocation' in navigator) {
+  let centred = false;
+  navigator.geolocation.watchPosition((p) => {
+    if (state.testMode) return;
+    setPosition(p.coords.latitude, p.coords.longitude, p.coords.accuracy);
+    if (!centred) { centred = true; map.setView([p.coords.latitude, p.coords.longitude], 15); }
+  }, (err) => {
+    $('pGps').textContent = 'Location is off. Allow location access in your browser settings to play.';
+  }, { enableHighAccuracy: true, maximumAge: 3000, timeout: 20000 });
+} else {
+  $('pGps').textContent = 'This browser does not support location.';
+}
+$('testToggle').addEventListener('click', () => {
+  state.testMode = !state.testMode;
+  $('testToggle').setAttribute('aria-pressed', state.testMode);
+  toast(state.testMode ? 'Test mode on: tap the map to set your position' : 'Test mode off: using real GPS');
+});
+
+/* ---------- Explore list ---------- */
+function thumbSvg(kind) {
+  if (kind === 'orange') return '<svg width="72" height="54" viewBox="0 0 76 56" aria-hidden="true"><path d="M0 56 C 15 30, 30 46, 40 34 S 64 28, 76 40 L76 56 Z" fill="#FFE66D"/><circle cx="22" cy="18" r="8" fill="#1A1A1A"/></svg>';
+  return '<svg width="72" height="54" viewBox="0 0 76 56" aria-hidden="true"><path d="M0 56 L22 22 L38 40 L54 14 L76 56 Z" fill="#4ECDC4"/><circle cx="58" cy="10" r="6" fill="#FFE66D"/></svg>';
+}
+function filtered() {
+  return QUESTS.filter((q) => {
+    if (state.filter === 'free' && q.price) return false;
+    if (['Family', 'Moderate', 'Hard'].includes(state.filter) && q.difficulty !== state.filter) return false;
+    if (state.query && !(q.title + ' ' + q.topic).toLowerCase().includes(state.query)) return false;
+    return true;
+  });
+}
+function renderList() {
+  const list = filtered();
+  const box = $('questList');
+  box.replaceChildren();
+  if (!list.length) { box.appendChild(el('div', { class: 'empty', text: 'No quests match. Try another filter or search.' })); }
+  list.forEach((q) => {
+    const thumb = el('div', { class: 'thumb' });
+    thumb.style.background = q.thumb === 'orange' ? '#FF6B35' : '#0E6B66';
+    thumb.innerHTML = thumbSvg(q.thumb);
+    let meta = routeKm(q) + ' km, ' + q.minutes + ' min, ' + q.stops.length + ' stops';
+    if (state.pos) meta += ', ' + fmtDist(distanceM(state.pos, q.stops[0])) + ' away';
+    const tagRow = el('div', {}, [
+      el('span', { class: 'tag tag-' + q.difficulty.toLowerCase(), text: q.difficulty }),
+      el('span', { class: 'price', text: priceText(q) })
+    ]);
+    const info = el('div', { style: 'flex:1' }, [el('div', { class: 'qc-title', text: q.title }), el('div', { class: 'qc-meta', text: meta }), tagRow]);
+    const card = el('button', { class: 'quest-card', 'aria-label': 'Open ' + q.title }, [thumb, info]);
+    card.addEventListener('click', () => openDetail(q));
+    box.appendChild(card);
+  });
+  renderMarkers(list);
+}
+$('chips').addEventListener('click', (e) => {
+  const c = e.target.closest('.chip'); if (!c) return;
+  document.querySelectorAll('.chip').forEach((x) => x.setAttribute('aria-pressed', x === c));
+  state.filter = c.dataset.filter; renderList();
+});
+$('search').addEventListener('input', (e) => { state.query = e.target.value.trim().toLowerCase(); renderList(); });
+document.querySelectorAll('[data-nav]').forEach((b) => b.addEventListener('click', () => {
+  const n = b.dataset.nav;
+  if (n === 'explore') return go('explore');
+  const copy = {
+    myquests: ['My quests', 'Your started and completed quests will live here once accounts are connected.'],
+    create: ['Create a quest', 'The quest builder with route recording is coming in the next stage.'],
+    profile: ['Your profile', 'Sign in, stats and settings are coming with Firebase in the next stage.']
+  }[n];
+  $('soonTitle').textContent = copy[0]; $('soonText').textContent = copy[1]; go('soon');
+}));
+
+/* ---------- Detail ---------- */
+function openDetail(q) {
+  state.quest = q;
+  $('dTags').replaceChildren(
+    el('span', { class: 'tag tag-' + q.difficulty.toLowerCase(), text: q.difficulty }),
+    el('span', { class: 'tag tag-topic', text: q.topic })
+  );
+  $('dTitle').textContent = q.title;
+  $('dBy').textContent = 'by ' + q.creator;
+  $('dStats').replaceChildren(...[[routeKm(q) + ' km', 'distance'], [q.minutes + ' min', 'duration'], [q.stops.length, 'stops'], [q.ages, 'ages']]
+    .map(([v, l]) => el('div', { class: 'stat' }, [el('b', { text: String(v) }), el('span', { text: l })])));
+  $('dDesc').textContent = q.desc;
+  $('dSafety').textContent = q.safety;
+  $('dPrice').textContent = priceText(q);
+  $('dPriceNote').textContent = q.price ? 'Payments arrive in a later stage' : 'Free to play';
+  const p = state.progress[q.id];
+  $('startBtn').textContent = p && p.stop > 0 && p.stop < q.stops.length ? 'Continue quest' : 'Start quest';
+  go('detail');
+}
+$('startBtn').addEventListener('click', () => {
+  const q = state.quest, p = prog(q);
+  if (p.stop >= q.stops.length) { state.progress[q.id] = null; delete state.progress[q.id]; prog(q); }
+  const pp = prog(q);
+  if (!pp.started) pp.started = Date.now();
+  if (!pp.stopStarted) pp.stopStarted = Date.now();
+  saveProgress(); state.lastDist = null; go('play');
+});
+
+/* ---------- Play ---------- */
+function renderPlay() {
+  const q = state.quest, p = prog(q), stop = q.stops[p.stop];
+  $('pStep').textContent = 'Stop ' + (p.stop + 1) + ' of ' + q.stops.length;
+  const segs = $('pSegs'); segs.style.gridTemplateColumns = 'repeat(' + q.stops.length + ', minmax(0, 1fr))';
+  segs.replaceChildren(...q.stops.map((_, i) => el('div', { class: 'seg' + (i < p.stop ? ' done' : i === p.stop ? ' now' : '') })));
+  $('pHintLabel').textContent = 'Hint ' + p.hints + ' of ' + stop.hints.length;
+  $('pOldHints').replaceChildren(...stop.hints.slice(0, p.hints - 1).map((h) => el('div', { class: 'hint-old', text: h })));
+  $('pHint').textContent = stop.hints[p.hints - 1];
+  $('revealBtn').hidden = p.hints >= stop.hints.length;
+  $('jumpBtn').hidden = !state.testMode;
+  $('checkinNote').textContent = 'Check in unlocks within ' + stop.radius + ' m of the stop';
+  updatePlayDistance();
+}
+function updatePlayDistance() {
+  const q = state.quest; if (!q) return;
+  const p = prog(q), stop = q.stops[p.stop];
+  if (!state.pos) { $('pDist').textContent = '...'; $('checkinBtn').disabled = true; return; }
+  const d = distanceM(state.pos, stop);
+  $('pDist').textContent = fmtDist(d);
+  let temp = '';
+  if (state.lastDist !== null && Math.abs(d - state.lastDist) > 3) temp = d < state.lastDist ? 'Getting warmer' : 'Getting colder';
+  if (temp) $('pTemp').textContent = temp;
+  state.lastDist = d;
+  const closeness = Math.max(0, Math.min(1, 1 - d / 800));
+  $('pRing').setAttribute('stroke-dashoffset', String(603 * (1 - closeness)));
+  const acc = state.accuracy ? Math.round(state.accuracy) : null;
+  $('pGps').textContent = state.testMode ? 'Test mode position' : acc ? 'GPS accurate to about ' + acc + ' m' : '';
+  // allow for GPS wobble: radius plus up to 15 m of reported accuracy
+  const allowance = stop.radius + Math.min(15, state.accuracy || 0);
+  const inRange = d <= allowance;
+  $('checkinBtn').disabled = !inRange;
+  if (inRange) $('pTemp').textContent = 'You are here!';
+}
+$('revealBtn').addEventListener('click', () => {
+  const p = prog(state.quest); p.hints++; p.hintsUsed++; saveProgress(); renderPlay();
+});
+$('jumpBtn').addEventListener('click', () => {
+  const stop = state.quest.stops[prog(state.quest).stop];
+  setPosition(stop.lat + 0.00005, stop.lng, 5);
+});
+$('checkinBtn').addEventListener('click', () => {
+  const q = state.quest, p = prog(q), stop = q.stops[p.stop];
+  const mins = Math.max(1, Math.round((Date.now() - (p.stopStarted || Date.now())) / 60000));
+  const hintsOnStop = p.hints - 1;
+  $('fKicker').textContent = 'Stop ' + (p.stop + 1) + ' of ' + q.stops.length + ' found';
+  $('fTitle').textContent = stop.name;
+  $('fStory').textContent = stop.story;
+  $('fPills').replaceChildren(el('span', { class: 'pill', text: mins + ' min' }), el('span', { class: 'pill', text: hintsOnStop === 0 ? 'No extra hints' : hintsOnStop + (hintsOnStop === 1 ? ' extra hint' : ' extra hints') }));
+  $('fPhoto').style.display = 'none'; $('photoLabel').textContent = 'Take a memory photo';
+  const last = p.stop === q.stops.length - 1;
+  $('nextBtn').textContent = last ? 'Finish quest' : 'On to stop ' + (p.stop + 2);
+  p.stop++; p.hints = 1; p.stopStarted = Date.now(); saveProgress();
+  if (navigator.vibrate) navigator.vibrate([60, 40, 120]);
+  go('found');
+  const badge = document.querySelector('#found .badge'); badge.classList.remove('badge-pop'); void badge.offsetWidth; badge.classList.add('badge-pop');
+});
+$('photoInput').addEventListener('change', (e) => {
+  const f = e.target.files && e.target.files[0]; if (!f) return;
+  const img = $('fPhoto'); img.src = URL.createObjectURL(f); img.style.display = 'block';
+  $('photoLabel').textContent = 'Retake photo';
+});
+$('nextBtn').addEventListener('click', () => {
+  const q = state.quest, p = prog(q);
+  state.lastDist = null; $('pTemp').textContent = '';
+  if (p.stop >= q.stops.length) {
+    const mins = Math.max(1, Math.round((Date.now() - p.started) / 60000));
+    $('cTitle').textContent = q.title;
+    $('cPills').replaceChildren(el('span', { class: 'pill', text: q.stops.length + ' stops' }), el('span', { class: 'pill', text: mins + ' min total' }), el('span', { class: 'pill', text: p.hintsUsed + ' hints used' }));
+    go('complete');
+  } else go('play');
+});
+
+renderList();
+</script>
+</body>
+</html>
